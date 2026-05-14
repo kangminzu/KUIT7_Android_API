@@ -37,37 +37,33 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostCreateScreen(
     onNavigateBack: () -> Unit,
-    onPostCreated: () -> Unit
+    onPostCreated: () -> Unit,
+    viewModel: PostViewModel
 ) {
     // TODO: 아래 local state를 ViewModel의 FormState로 교체
-    var author by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var isUploading by remember { mutableStateOf(false) }
+    val author = viewModel.postCreateFormState.author
+    val title = viewModel.postCreateFormState.title
+    val content = viewModel.postCreateFormState.content
+    val selectedImageUri = viewModel.postCreateFormState.selectedImageUri
+    val isUploading = viewModel.isUploading
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
+        viewModel.onUpdateSelectedImageUri(uri)
     }
 
     Scaffold(
@@ -100,7 +96,7 @@ fun PostCreateScreen(
         ) {
             OutlinedTextField(
                 value = author,
-                onValueChange = { author = it },
+                onValueChange = { viewModel.onUpdateAuthor(it) },
                 label = { Text("작성자") },
                 placeholder = { Text("anonymous") },
                 modifier = Modifier.fillMaxWidth(),
@@ -113,7 +109,7 @@ fun PostCreateScreen(
 
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = { viewModel.onUpdateTitle(it) },
                 label = { Text("제목") },
                 placeholder = { Text("제목을 입력해주세요.") },
                 modifier = Modifier.fillMaxWidth(),
@@ -126,7 +122,7 @@ fun PostCreateScreen(
 
             OutlinedTextField(
                 value = content,
-                onValueChange = { content = it },
+                onValueChange = { viewModel.onUpdateContent(it) },
                 label = { Text("내용") },
                 placeholder = { Text("내용을 입력해주세요.") },
                 modifier = Modifier
@@ -199,7 +195,7 @@ fun PostCreateScreen(
                             )
 
                             IconButton(
-                                onClick = { selectedImageUri = null },
+                                onClick = { viewModel.onUpdateSelectedImageUri(null) },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .padding(8.dp)
@@ -220,7 +216,9 @@ fun PostCreateScreen(
             Button(
                 onClick = {
                     // TODO: createPost()와 연결하고 작성 성공 시 뒤로 가기를 처리
-                    onPostCreated()
+                    viewModel.createPost {
+                        onPostCreated()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -243,14 +241,3 @@ private fun outlinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
     unfocusedBorderColor = MaterialTheme.colorScheme.outline
 )
-
-@Preview(showBackground = true)
-@Composable
-private fun PostCreateScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostCreateScreen(
-            onNavigateBack = {},
-            onPostCreated = {}
-        )
-    }
-}

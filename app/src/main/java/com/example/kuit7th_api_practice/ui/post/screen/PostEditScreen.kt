@@ -35,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,21 +55,24 @@ import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 fun PostEditScreen(
     postId: Long,
     onNavigateBack: () -> Unit,
-    onPostUpdated: () -> Unit
+    onPostUpdated: () -> Unit,
+    viewModel: PostViewModel
 ) {
-    val post = PostPracticeSampleData.findPost(postId)
+    LaunchedEffect(postId) {
+        viewModel.getPostDetail(postId)
+    }
 
     // TODO: 아래 local state를 ViewModel의 수정 폼 상태로 교체
-    var title by remember { mutableStateOf(post.title) }
-    var content by remember { mutableStateOf(post.content) }
-    var originalImageUrl by remember { mutableStateOf(post.imageUrl) }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var isUploading by remember { mutableStateOf(false) }
+    val title = viewModel.postEditFormState.title
+    val content = viewModel.postEditFormState.content
+    val originalImageUrl = viewModel.postEditFormState.originalImageUrl
+    val selectedImageUri = viewModel.postEditFormState.selectedImageUri
+    val isUploading = viewModel.isUploading
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
+        viewModel.onUpdateEditSelectedImageUri(uri)
     }
 
     Scaffold(
@@ -97,7 +102,7 @@ fun PostEditScreen(
         ) {
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = { viewModel.onUpdateEditTitle(it) },
                 label = { Text("제목") },
                 placeholder = { Text("제목을 입력해주세요.") },
                 modifier = Modifier.fillMaxWidth(),
@@ -113,7 +118,7 @@ fun PostEditScreen(
 
             OutlinedTextField(
                 value = content,
-                onValueChange = { content = it },
+                onValueChange = { viewModel.onUpdateEditContent(it) },
                 label = { Text("내용") },
                 placeholder = { Text("내용을 입력해주세요.") },
                 modifier = Modifier
@@ -159,8 +164,7 @@ fun PostEditScreen(
                     )
                     IconButton(
                         onClick = {
-                            originalImageUrl = null
-                            selectedImageUri = null
+                            viewModel.onClearEditImages()
                         },
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -191,9 +195,11 @@ fun PostEditScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
+                // TODO: 실습에서 updatePost()와 연결하고 성공 시 뒤로 가기를 처리해보세요.
                 onClick = {
-                    // TODO: 실습에서 updatePost()와 연결하고 성공 시 뒤로 가기를 처리해보세요.
-                    onPostUpdated()
+                    viewModel.updatePost(postId) {
+                        onPostUpdated()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -207,17 +213,5 @@ fun PostEditScreen(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PostEditScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostEditScreen(
-            postId = 1L,
-            onNavigateBack = {},
-            onPostUpdated = {}
-        )
     }
 }

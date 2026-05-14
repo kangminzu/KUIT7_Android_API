@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.kuit7th_api_practice.ui.post.state.PostDetailUiState
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
 import com.example.kuit7th_api_practice.util.formatDateTime
 
@@ -53,11 +55,16 @@ import com.example.kuit7th_api_practice.util.formatDateTime
 fun PostDetailScreen(
     postId: Long,
     onNavigateBack: () -> Unit,
-    onEditClick: (Long) -> Unit
+    onEditClick: (Long) -> Unit,
+    viewModel: PostViewModel
 ) {
     // TODO: 실습에서 ViewModel의 상세 상태로 교체
-    val uiState: PostDetailUiState = PostDetailUiState.Success(PostPracticeSampleData.findPost(postId))
+    val uiState = viewModel.postDetailUiState
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(postId) {
+        viewModel.getPostDetail(postId)
+    }
 
     Scaffold(
         topBar = {
@@ -196,6 +203,7 @@ fun PostDetailScreen(
         }
     }
 
+    // 게시글 삭제 시 dialog 띄움
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -205,8 +213,10 @@ fun PostDetailScreen(
                 TextButton(
                     onClick = {
                         // TODO: deletePost()와 연결
-                        showDeleteDialog = false
-                        onNavigateBack()
+                        viewModel.deletePost(postId) {
+                            showDeleteDialog = false
+                            onNavigateBack()
+                        }
                     }
                 ) {
                     Text("삭제")
@@ -217,18 +227,6 @@ fun PostDetailScreen(
                     Text("취소")
                 }
             }
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PostDetailScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostDetailScreen(
-            postId = 1L,
-            onNavigateBack = {},
-            onEditClick = {}
         )
     }
 }

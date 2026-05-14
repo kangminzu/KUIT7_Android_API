@@ -19,22 +19,26 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.kuit7th_api_practice.ui.post.component.PostItem
 import com.example.kuit7th_api_practice.ui.post.state.PostListUiState
-import com.example.kuit7th_api_practice.ui.theme.KUIT7th_API_practiceTheme
+import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostListScreen(
     onPostClick: (Long) -> Unit,
-    onCreatePostClick: () -> Unit
+    onCreatePostClick: () -> Unit,
+    viewModel: PostViewModel
 ) {
-    // TODO: 실습에서 이 샘플 상태를 ViewModel의 uiState로 교체
-    val uiState: PostListUiState = PostListUiState.Success(PostPracticeSampleData.posts)
+    val uiState = viewModel.postListUiState
+
+    LaunchedEffect(Unit) {
+        viewModel.getPosts()
+    }
 
     Scaffold(
         topBar = {
@@ -83,22 +87,12 @@ fun PostListScreen(
                     items(uiState.posts, key = { it.id }) { post ->
                         PostItem(
                             post = post,
-                            onClick = { onPostClick(post.id) }
+                            onClick = { onPostClick(post.id) },
+                            onFavoriteClick = { viewModel.onFavoriteClick(post.id) }
                         )
                     }
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PostListScreenPreview() {
-    KUIT7th_API_practiceTheme {
-        PostListScreen(
-            onPostClick = {},
-            onCreatePostClick = {}
-        )
     }
 }
