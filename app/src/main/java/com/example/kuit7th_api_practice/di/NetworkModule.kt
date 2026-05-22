@@ -10,11 +10,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Singleton
-import kotlin.jvm.java
 
 @Module
 @InstallIn(SingletonComponent::class)
-object NetworkModule{
+object NetworkModule {
     @Provides
     @Singleton
     fun provideJson(): Json = Json {
@@ -25,7 +24,7 @@ object NetworkModule{
     @Singleton
     fun provideRetrofit(json: Json): Retrofit =
         Retrofit.Builder()
-            .baseUrl("https://jsonplaceholder.typicode.com")
+            .baseUrl("https://jsonplaceholder.typicode.com/")
             .addConverterFactory(
                 json.asConverterFactory("application/json".toMediaType()),
             ).build()

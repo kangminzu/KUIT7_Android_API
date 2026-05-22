@@ -23,6 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,7 +39,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kuit7th_api_practice.ui.post.state.PostDetailUiState
+import com.example.kuit7th_api_practice.ui.post.state.PostEvent
 import com.example.kuit7th_api_practice.ui.post.viewmodel.PostViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,13 +52,22 @@ fun PostDetailScreen(
     onEditClick: (Long) -> Unit,
     viewModel: PostViewModel
 ) {
-    // TODO 8주차 미션: 상세 화면 상태도 collect해서 구독하는 구조로 변경하기
-    val uiState = viewModel.postDetailUiState
+    val uiState by viewModel.postDetailUiState.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(postId) {
         viewModel.getPostDetail(postId)
-        // TODO 8주차 미션: 삭제 성공 이벤트를 구독해서 뒤로가기 또는 Snackbar를 처리하기
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                PostEvent.PostDeleted -> onNavigateBack()
+                is PostEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+                else -> Unit
+            }
+        }
     }
 
     Scaffold(
@@ -75,9 +88,10 @@ fun PostDetailScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        when (uiState) {
+        when (val state = uiState) {
             is PostDetailUiState.Loading -> {
                 Box(
                     modifier = Modifier
@@ -96,12 +110,12 @@ fun PostDetailScreen(
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = uiState.message)
+                    Text(text = state.message)
                 }
             }
 
             is PostDetailUiState.Success -> {
-                val post = uiState.post
+                val post = state.post
 
                 Column(
                     modifier = Modifier
@@ -171,11 +185,8 @@ fun PostDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.deletePost(postId) {
-                            // TODO 8주차 미션: 이 콜백을 화면 이벤트 흐름으로 대체하기
-                            showDeleteDialog = false
-                            onNavigateBack()
-                        }
+                        showDeleteDialog = false
+                        viewModel.deletePost(postId)
                     }
                 ) {
                     Text("Delete")
